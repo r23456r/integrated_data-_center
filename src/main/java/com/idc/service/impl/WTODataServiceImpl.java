@@ -75,6 +75,7 @@ public class WTODataServiceImpl implements DataService {
             assembleJSON(wtoJson, singlebeans);
         }
         try {
+            //todo 2022年5月14日 先创建文件夹
             writeFile("C:\\Users\\PandaIP\\Desktop\\file\\vital.json", wtoJson.toJSONString());
         } catch (IOException e) {
             e.printStackTrace();
@@ -126,6 +127,7 @@ public class WTODataServiceImpl implements DataService {
         Map<String, Object> paramMap = new HashMap<>();
         paramMap.put("i", IndicatorCode);
         paramMap.put("r", id == null ? "all" : id);
+        // todo 2022年5月14日 谨慎修改，部分指标单次数据量非常大
         paramMap.put("max", "2000");
         paramMap.put("fmt", "json");
         paramMap.put("mode", "full");
