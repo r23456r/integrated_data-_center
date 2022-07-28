@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.idc.dao.mapper.IDCNodeInfoMapper">
+    <resultMap id="IDCNodeInfo" type="com.idc.dao.entity.IDCNodeInfoVo">
+        <result column="id" jdbcType="VARCHAR" property="id"/>
+        <result column="fatherId" jdbcType="VARCHAR" property="fatherId"/>
+        <result column="nodeName" jdbcType="VARCHAR" property="nodeName"/>
+        <result column="iDCAttributei" jdbcType="LONGVARCHAR" property="iDCAttributei"/>
+        <result column="iDCType" jdbcType="INTEGER" property="iDCType"/>
+        <result column="createDate" jdbcType="DATE" property="createDate"/>
+        <result column="updateDate" jdbcType="DATE" property="updateDate"/>
+    </resultMap>
+
+    <resultMap id="BankVo" type="com.idc.dao.entity.BankVo">
+        <result column="CountryName" jdbcType="VARCHAR" property="CountryName"/>
+        <result column="CountryCode" jdbcType="VARCHAR" property="CountryCode"/>
+        <result column="SeriesName" jdbcType="VARCHAR" property="SeriesName"/>
+        <result column="SeriesCode" jdbcType="VARCHAR" property="SeriesCode"/>
+        <result column="data2016" jdbcType="VARCHAR" property="data2016"/>
+        <result column="data2017" jdbcType="VARCHAR" property="data2017"/>
+        <result column="data2018" jdbcType="VARCHAR" property="data2018"/>
+        <result column="data2019" jdbcType="VARCHAR" property="data2019"/>
+        <result column="data2020" jdbcType="VARCHAR" property="data2020"/>
+    </resultMap>
+
+    <insert id="batchInsertIDCNodeInfos" parameterType="java.util.List">
+        <foreach collection="infoVoList" item="item" index="index" open="" close="" separator=";">
+            INSERT ${tableName} (id,fatherId,nodeName,iDCAttributei,iDCType,createDate,updateDate)
+            values (
+            #{item.id},#{item.fatherId},#{item.nodeName},#{item.iDCAttributei},#{item.iDCType},#{item.createDate},#{item.updateDate}
+            )
+        </foreach>
+    </insert>
+
+    <select id="selectAllIDCNodeInfos" resultMap="IDCNodeInfo">
+        select id, fatherId,nodeName,iDCAttributei,iDCType,createDate,updateDate from ${tableName}
+    </select>
+
+
+    <select id="selectAllBankData" resultMap="BankVo">
+         select CountryName,CountryCode,SeriesName,SeriesCode,
+	CONVERT(data2016,DECIMAL(10,2)) AS data2016,
+	CONVERT(data2017,DECIMAL(10,2)) AS data2017,
+	CONVERT(data2018,DECIMAL(10,2)) AS data2018,
+	CONVERT(data2019,DECIMAL(10,2)) AS data2019,
+	CONVERT(data2020,DECIMAL(10,2)) AS data2020
+ from `2c92c38b-36d7-431a-b8f8-a1f20d38f0c2_Data`
+    </select>
+
+
+    <update id="batchUpdateIDCNodeInfos">
+        <foreach collection="infoVoList" item="item" index="index" open="" close="" separator=";">
+            UPDATE  ${tableName}  SET
+            iDCAttributei = #{item.iDCAttributei},
+            isIncludeData = #{item.iDCType},
+            updateDate = #{item.updateDate}
+            WHERE id = #{item.id}
+        </foreach>
+    </update>
+</mapper>
