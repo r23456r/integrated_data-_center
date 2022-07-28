@@ -26,18 +26,17 @@ import java.util.regex.Pattern;
 public class GlobalFirePowerDataService {
     private Set<String> transSet;
     private Map<String, String> transResultMap = new HashMap<>();
-    private Map<String, String> transResultMapForNew = new HashMap<>();
     private List<DataHtmlEntity> htmlList = new ArrayList<>();
     private List<DataSortEntity> sortList = new ArrayList<>();
     private List<DataRankOldEntity> rankOldList = new ArrayList<>();
-    Pattern upperCasePattern = Pattern.compile("/^[A-Z]+$/");
+    Pattern upperCasePattern = Pattern.compile("^[A-Z]+$");
 
     @Test
     public void test() {
 
         getHtmlData();
-//        getSortData();
-//        getRankOdlData();
+        getSortData();
+        getRankOdlData();
         transData();
         htmlList.forEach(dataHtmlEntity -> {
             dataHtmlEntity.setName(transResultMap.get(dataHtmlEntity.getName()).replace("：", ""));
@@ -49,23 +48,12 @@ public class GlobalFirePowerDataService {
             addRankOldEntity.setCountry(transResultMap.get(addRankOldEntity.getCountry()).replace("：", ""));
         });
         //中英文翻译
-        write2Json();
+        FileUtil.writeBytes(JSONObject.toJSONString(transResultMap).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\trans.json"));
         //JSONString
         FileUtil.writeBytes(JSONObject.toJSONString(htmlList).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\html.json"));
         FileUtil.writeBytes(JSONObject.toJSONString(sortList).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\sort.json"));
         FileUtil.writeBytes(JSONObject.toJSONString(rankOldList).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\oldRank.json"));
 
-    }
-
-    private void write2Json() {
-
-        for (String oldKey : transResultMap.keySet()) {
-            String oldValue = transResultMap.get(oldKey);
-            transResultMapForNew.put(oldKey, oldValue.replaceAll("[^\u4E00-\u9FA5]", ""));
-        }
-        log.info("Map:  "+JSONObject.toJSONString(transResultMap));
-        FileUtil.writeBytes(JSONObject.toJSONString(transResultMap).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\trans_full.json"));
-        FileUtil.writeBytes(JSONObject.toJSONString(transResultMapForNew).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\trans_part.json"));
     }
 
     private void getRankOdlData() {
@@ -83,16 +71,27 @@ public class GlobalFirePowerDataService {
             Elements countries = ele.select("div[class^=countryName").select("span[class$=textNormal]");
             System.out.printf("%s   ------   %s--------%s", year, ranks.text(), countries.text());
             for (int i = 0; i < countries.size(); i++) {
-//                String[] split = countries.get(i).text().split(" ");
-//                String country = split[split.length - 1];
-//                if (matchUpperCase(country)) {
-//
-//                }
                 String country = countries.get(i).text();
-                addTranData(country);
+                country = getEndStr(country);
+                addTransData(country);
                 addRankOldEntity(ranks.get(i).text(), country, year);
             }
         }
+    }
+
+    /**
+     * 屏蔽国家缩写
+     *
+     * @param country
+     * @return
+     */
+    private String getEndStr(String country) {
+        String[] split = country.split(" ");
+        String split_2 = split[split.length - 1];
+        if (matchUpperCase(split_2)) {
+            country = country.replace(split_2, "").trim();
+        }
+        return country;
     }
 
     private void addRankOldEntity(String rank, String country, String year) {
@@ -108,19 +107,26 @@ public class GlobalFirePowerDataService {
             analysisSortData(html);
         }
     }
-public boolean matchUpperCase(String str) {
-    Matcher matcher = upperCasePattern.matcher(str);
-    return matcher.find();
-}
+
+    /**
+     * 仅匹配大写字母 排除国家缩写
+     *
+     * @param str
+     * @return
+     */
+    public boolean matchUpperCase(String str) {
+        Matcher matcher = upperCasePattern.matcher(str);
+        return matcher.find();
+    }
+
     public void getHtmlData() {
         File fload = new File("E:\\deveData\\global\\html");
         for (File htmlFile : fload.listFiles()) {
             System.out.println("=====================================current File:  " + htmlFile.getName());
             String html = TextIOStreamUtils.readerFile(htmlFile.getAbsolutePath());
-            String htmlName = htmlFile.getName().replace(".html", "");
-            String[] split = htmlName.split(" ");
-            String name = split[split.length - 1];
-            addTranData(name);
+            String name = htmlFile.getName().replace(".html", "");
+            name = getEndStr(name);
+            addTransData(name);
             Element mianEl = getHtmlMainEl(html);
             analysisHtmlData(mianEl);
         }
@@ -151,7 +157,8 @@ public boolean matchUpperCase(String str) {
         for (Element element : elements) {
             String rank = element.select("span[class=textWhite textLarge]").text();
             String country = element.select("span[class=textWhite textLarge textShadow]").text();
-            addTranData(country);
+            country = getEndStr(country);
+            addTransData(country);
             String numStr = element.select("span[style^=background-color]").text();
             addSortEntity(title, description1 + description2, rank, country, numStr);
         }
@@ -177,7 +184,7 @@ public boolean matchUpperCase(String str) {
             String tagName = child.tagName();
             if (tagName.equals("button")) {
                 tag = child.text().split("\\[")[0].trim();
-                addTranData(tag);
+                addTransData(tag);
             } else if (tag != null && !"".equals(tag)) {
                 analysisHtmlType(child, tag);
                 tag = "";
@@ -196,7 +203,8 @@ public boolean matchUpperCase(String str) {
                         Elements textShadowEls = children.get(i).select("span[class=textBold textNormal textShadow]");
                         Elements overviewRankHolderEl = children.get(i).select("div[class=overviewRankHolder]");
                         String textShadow = textShadowEls.text();
-                        addTranData(textShadow);
+                        textShadow = getEndStr(textShadow);
+                        addTransData(textShadow);
                         String overviewRankHolder = overviewRankHolderEl.text().replace("Rnk", "").trim();
                         addNum(textShadow, overviewRankHolder);
                     }
@@ -215,7 +223,8 @@ public boolean matchUpperCase(String str) {
                     String text = ele.select("span[class$=textBold textShadow]").text();
                     String num = ele.select("span[class$=textWhite textShadow]").text();
                     System.out.println(String.format("%s   ------   %s", text, num));
-                    addTranData(text);
+                    text = getEndStr(text);
+                    addTransData(text);
                     //数字型数据处理
                     addNum(text, num);
                 }
@@ -250,7 +259,7 @@ public boolean matchUpperCase(String str) {
         return null;
     }
 
-    public void addTranData(String str) {
+    public void addTransData(String str) {
         if (transSet == null) {
             transSet = new HashSet<>();
         }
@@ -275,11 +284,6 @@ public boolean matchUpperCase(String str) {
         for (TransVo.Trans_result trans_result : resultList) {
             transResultMap.put(trans_result.getSrc(), trans_result.getDst());
         }
-//        JSONObject object = new JSONObject();
-//        for (TransVo.Trans_result result : resultList) {
-//            object.put(result.getSrc(), result.getDst());
-//        }
-
     }
 
     public void getoldHtml() {
