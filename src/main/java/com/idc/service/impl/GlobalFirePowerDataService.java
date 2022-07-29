@@ -1,14 +1,13 @@
 package com.idc.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.io.FileUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.idc.common.translate.TransApi;
 import com.idc.common.translate.TransVo;
 import com.idc.common.utils.HttpWormUtils;
 import com.idc.common.utils.TextIOStreamUtils;
-import com.idc.dao.entity.DataHtmlEntity;
-import com.idc.dao.entity.DataRankOldEntity;
-import com.idc.dao.entity.DataSortEntity;
+import com.idc.dao.entity.*;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -19,14 +18,17 @@ import org.junit.Test;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class GlobalFirePowerDataService {
     private Set<String> transSet;
     private Map<String, String> transResultMap = new HashMap<>();
     private List<DataHtmlEntity> htmlList = new ArrayList<>();
+    private Map<String, Map<String, List<InnerData>>> map = new HashMap<>();
     private List<DataSortEntity> sortList = new ArrayList<>();
     private List<DataRankOldEntity> rankOldList = new ArrayList<>();
     Pattern upperCasePattern = Pattern.compile("^[A-Z]+$");
@@ -39,7 +41,7 @@ public class GlobalFirePowerDataService {
         getRankOdlData();
         transData();
         htmlList.forEach(dataHtmlEntity -> {
-            dataHtmlEntity.setName(transResultMap.get(dataHtmlEntity.getName()).replace("：", ""));
+            dataHtmlEntity.getData().setName(transResultMap.get(dataHtmlEntity.getData().getName()).replace("：", ""));
         });
         sortList.forEach(dataSortEntity -> {
             dataSortEntity.setCountry(transResultMap.get(dataSortEntity.getCountry()).replace("：", ""));
@@ -48,11 +50,11 @@ public class GlobalFirePowerDataService {
             addRankOldEntity.setCountry(transResultMap.get(addRankOldEntity.getCountry()).replace("：", ""));
         });
         //中英文翻译
-        FileUtil.writeBytes(JSONObject.toJSONString(transResultMap).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\trans.json"));
+//        FileUtil.writeBytes(JSONObject.toJSONString(transResultMap).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\trans.json"));
         //JSONString
-        FileUtil.writeBytes(JSONObject.toJSONString(htmlList).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\html.json"));
-        FileUtil.writeBytes(JSONObject.toJSONString(sortList).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\sort.json"));
-        FileUtil.writeBytes(JSONObject.toJSONString(rankOldList).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\oldRank.json"));
+        FileUtil.writeBytes(JSONObject.toJSONString(map).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\html.json"));
+//        FileUtil.writeBytes(JSONObject.toJSONString(sortList).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\sort.json"));
+//        FileUtil.writeBytes(JSONObject.toJSONString(rankOldList).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\oldRank.json"));
 
     }
 
@@ -128,7 +130,7 @@ public class GlobalFirePowerDataService {
             name = getEndStr(name);
             addTransData(name);
             Element mianEl = getHtmlMainEl(html);
-            analysisHtmlData(mianEl);
+            analysisHtmlData(name, mianEl);
         }
 
 //        File[] files = new File("E:\\deveData\\global\\sort").listFiles();
@@ -176,7 +178,7 @@ public class GlobalFirePowerDataService {
         sortList.add(new DataSortEntity(title, desc, s1[0], country, s1[1], unit));
     }
 
-    private void analysisHtmlData(Element doc) {
+    private void analysisHtmlData(String country, Element doc) {
         Elements children = doc.children();
         String tag = "";
         for (int i = 0; i < children.size(); i++) {
@@ -186,14 +188,14 @@ public class GlobalFirePowerDataService {
                 tag = child.text().split("\\[")[0].trim();
                 addTransData(tag);
             } else if (tag != null && !"".equals(tag)) {
-                analysisHtmlType(child, tag);
+                analysisHtmlType(country, child, tag);
                 tag = "";
             }
 
         }
     }
 
-    private void analysisHtmlType(Element el, String type) {
+    private void analysisHtmlType(String country, Element el, String type) {
         switch (type) {
             case "OVERVIEW":
                 Elements alist = el.select("a[class=picTrans]");
@@ -206,7 +208,7 @@ public class GlobalFirePowerDataService {
                         textShadow = getEndStr(textShadow);
                         addTransData(textShadow);
                         String overviewRankHolder = overviewRankHolderEl.text().replace("Rnk", "").trim();
-                        addNum(textShadow, overviewRankHolder);
+                        addNum(country, type, textShadow, overviewRankHolder);
                     }
                 }
                 break;
@@ -226,7 +228,7 @@ public class GlobalFirePowerDataService {
                     text = getEndStr(text);
                     addTransData(text);
                     //数字型数据处理
-                    addNum(text, num);
+                    addNum(country, type, text, num);
                 }
                 break;
             default:
@@ -234,13 +236,30 @@ public class GlobalFirePowerDataService {
         }
     }
 
-    private void addNum(String text, String num) {
+    private void addNum(String country, String type, String text, String num) {
         num = num.replace(",", "");
         Pattern pattern = Pattern.compile("\\d+");
         Matcher matcher = pattern.matcher(num);
         if (matcher.find()) {
             String unit = num.substring(matcher.end()).trim();
-            htmlList.add(new DataHtmlEntity(text, matcher.group(), unit));
+            Map<String, List<InnerData>> topMap = map.get(type);
+            if (CollectionUtil.isNotEmpty(topMap)) {
+                List<InnerData> dataList = topMap.get(country);
+                if (CollectionUtil.isNotEmpty(dataList)) {
+                    dataList.add(new InnerData(text, matcher.group(), unit));
+                } else {
+                    List<InnerData> list = new ArrayList<>();
+                    list.add(new InnerData(text, matcher.group(), unit));
+                    topMap.put(country, list);
+                }
+            } else {
+                topMap = new HashMap<>();
+                List<InnerData> list = new ArrayList<>();
+                list.add(new InnerData(text, matcher.group(), unit));
+                topMap.put(country, list);
+                map.put(type, topMap);
+            }
+
         }
     }
 

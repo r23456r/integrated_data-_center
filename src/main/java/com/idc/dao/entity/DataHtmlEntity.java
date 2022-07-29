@@ -5,18 +5,12 @@ import org.apache.commons.lang3.StringUtils;
 
 @Data
 public class DataHtmlEntity {
-    //参数名称
-    private String name;
-    //参数值
-    private String num;
-    //参数单位
-    private String unit;
+    private String type;
+    private InnerData data;
 
-    public DataHtmlEntity(String name, String num, String unit) {
-        this.name = name;
-        this.num = num;
-        if (StringUtils.isNotBlank(unit)) {
-            this.unit = unit;
-        }
+
+    public DataHtmlEntity(String type, String name, String num, String unit) {
+        this.data = new InnerData(name, num, unit);
+        this.type = type;
     }
 }

@@ -87,7 +87,7 @@ public class WTODataServiceImpl implements DataService {
         for (String indicator : collect.keySet()) {
             List<WtoBean> groupByIndcatorBeans = collect.get(indicator);
             JSONObject attrB = new JSONObject();
-            //���벻׼ȷ�ģ���ʱ����
+            //????????????????
             if (indicatorMap.get(indicator)==null) {
                 continue;
             }
@@ -187,7 +187,7 @@ public class WTODataServiceImpl implements DataService {
 
     public Map<String, String> getMap(List<String> list) {
         StringBuilder sb = new StringBuilder();
-        //�ָ�������ʹ�û��з�����������Api�޷�׼������ʶ��
+        //??????????????��???????????Api?????????????
         for (int i = 0; i < list.size(); i++) {
             sb.append(list.get(i));
             if (i != list.size() - 1) {
