@@ -6,9 +6,11 @@ import com.idc.common.translate.TransApi;
 import com.idc.common.translate.TransVo;
 import com.idc.common.utils.HttpWormUtils;
 import com.idc.common.utils.TextIOStreamUtils;
+import com.idc.common.utils.UtilHandle;
 import com.idc.dao.entity.DataHtmlEntity;
 import com.idc.dao.entity.DataRankOldEntity;
 import com.idc.dao.entity.DataSortEntity;
+import com.idc.dao.entity.WtoBean;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -21,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class GlobalFirePowerDataService {
@@ -38,21 +41,17 @@ public class GlobalFirePowerDataService {
         getSortData();
         getRankOdlData();
         transData();
-        htmlList.forEach(dataHtmlEntity -> {
-            dataHtmlEntity.setName(transResultMap.get(dataHtmlEntity.getName()).replace("：", ""));
-        });
-        sortList.forEach(dataSortEntity -> {
-            dataSortEntity.setCountry(transResultMap.get(dataSortEntity.getCountry()).replace("：", ""));
-        });
+        htmlList.forEach(dataHtmlEntity -> {dataHtmlEntity.setName(transResultMap.get(dataHtmlEntity.getName()).replace("：", ""));});
+        sortList.forEach(dataSortEntity -> {dataSortEntity.setCountry(transResultMap.get(dataSortEntity.getCountry()).replace("：", ""));});
         rankOldList.forEach(addRankOldEntity -> {
             addRankOldEntity.setCountry(transResultMap.get(addRankOldEntity.getCountry()).replace("：", ""));
         });
-        //中英文翻译
+
+//        //中英文翻译
         FileUtil.writeBytes(JSONObject.toJSONString(transResultMap).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\trans.json"));
-        //JSONString
-        FileUtil.writeBytes(JSONObject.toJSONString(htmlList).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\html.json"));
-        FileUtil.writeBytes(JSONObject.toJSONString(sortList).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\sort.json"));
-        FileUtil.writeBytes(JSONObject.toJSONString(rankOldList).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\oldRank.json"));
+        FileUtil.writeBytes(JSONObject.toJSONString( writeJson2File(htmlList)).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\html.json"));
+        FileUtil.writeBytes(JSONObject.toJSONString( writeJson2File(sortList)).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\sort.json"));
+        FileUtil.writeBytes(JSONObject.toJSONString( writeJson2File(rankOldList)).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\oldRank.json"));
 
     }
 
@@ -62,6 +61,79 @@ public class GlobalFirePowerDataService {
         analysisRankOdlData(html);
     }
 
+    JSONObject writeJson2File(List<?> list) {
+        Class<?> aClass = list.get(0).getClass();
+        String className = aClass.getName();
+        JSONObject treeJsonData = new JSONObject();
+        switch (className) {
+            case "com.idc.dao.entity.DataHtmlEntity":
+                List<DataHtmlEntity> tmpList = (List<DataHtmlEntity>) list;
+                Map<String, List<DataHtmlEntity>> collect = tmpList.stream().collect(Collectors.groupingBy(DataHtmlEntity::getCountryName));
+                for (String indicator : collect.keySet()) {
+                    List<DataHtmlEntity> groupByBeans = collect.get(indicator);
+                    // TODO: 2022/7/29 修改为中文
+                    JSONObject dataA = new JSONObject();
+                    JSONObject attrA = new JSONObject();
+                    for (DataHtmlEntity bean : groupByBeans) {
+                        JSONObject attrB = new JSONObject();
+                        attrB.put("unit", bean.getUnit());
+                        attrB.put("itemName", bean.getName());
+                        attrB.put("countryName", bean.getCountryName());
+                        attrB.put("type", bean.getType());
+                        JSONObject resultB = UtilHandle.setNodeInfo(attrB, UtilHandle.createDataByYYYYMM(new Date(), bean.getNum()));
+                        resultB.put("IDCType", 1);
+                        dataA.put(bean.getName(), resultB);
+                    }
+                    attrA.put("itemName", indicator);
+                    treeJsonData.put(indicator, UtilHandle.setNodeData(attrA, dataA));
+                }
+                log.info("treeJsonData: \n" + treeJsonData + "\n");
+                break;
+            case "com.idc.dao.entity.DataSortEntity":
+                List<DataSortEntity> tmpSortList = (List<DataSortEntity>) list;
+                Map<String, List<DataSortEntity>> collect1 = tmpSortList.stream().collect(Collectors.groupingBy(DataSortEntity::getCountry));
+                for (String indicator : collect1.keySet()) {
+                    List<DataSortEntity> groupByBeans = collect1.get(indicator);
+                    // TODO: 2022/7/29 修改为中文
+                    JSONObject dataA = new JSONObject();
+                    JSONObject attrA = new JSONObject();
+                    for (DataSortEntity bean : groupByBeans) {
+                        JSONObject attrB = new JSONObject();
+                        attrB.put("unit", bean.getUnit());
+                        attrB.put("countryName", bean.getCountry());
+                        attrB.put("desc", bean.getDescription());
+                        attrB.put("title", bean.getTitle());
+                        JSONObject resultB = UtilHandle.setNodeInfo(attrB, UtilHandle.createDataByYYYYMM(new Date(), bean.getRank()));
+                        resultB.put("IDCType", 1);
+                        dataA.put(bean.getTitle(), resultB);
+                    }
+                    attrA.put("itemName", indicator);
+                    treeJsonData.put(indicator, UtilHandle.setNodeData(attrA, dataA));
+                }
+                log.info("treeJsonData: \n" + treeJsonData + "\n");
+                break;
+            case "com.idc.dao.entity.DataRankOldEntity":
+                List<DataRankOldEntity> tmpRankList = (List<DataRankOldEntity>) list;
+                Map<String, List<DataRankOldEntity>> collect2 = tmpRankList.stream().collect(Collectors.groupingBy(DataRankOldEntity::getCountry));
+                for (String indicator : collect2.keySet()) {
+                    List<DataRankOldEntity> groupByBeans = collect2.get(indicator);
+                    // TODO: 2022/7/29 修改为中文
+                    JSONObject dataA = new JSONObject();
+                    JSONObject attrA = new JSONObject();
+                    for (DataRankOldEntity bean : groupByBeans) {
+                        dataA.put(bean.getYear(), bean.getRank());
+                    }
+                    attrA.put("itemName", indicator);
+                    attrA.put("src", "GlobalFirepower.com Ranks");
+                    treeJsonData.put(indicator, UtilHandle.setNodeDataAndType(attrA, dataA, 1));
+                }
+                log.info("treeJsonData: \n" + treeJsonData + "\n");
+            default:
+                break;
+        }
+        return treeJsonData;
+    }
+
     private void analysisRankOdlData(String html) {
         Document doc = Jsoup.parse(html);
         Elements eles = doc.select("div[class^=mainLists");
@@ -69,7 +141,7 @@ public class GlobalFirePowerDataService {
             String year = ele.select("span[class$=textLarger textBold]").text();
             Elements ranks = ele.select("div[class^=rnkNum");
             Elements countries = ele.select("div[class^=countryName").select("span[class$=textNormal]");
-            System.out.printf("%s   ------   %s--------%s", year, ranks.text(), countries.text());
+////            System.out.printf("%s   ------   %s--------%s", year, ranks.text(), countries.text());
             for (int i = 0; i < countries.size(); i++) {
                 String country = countries.get(i).text();
                 country = getEndStr(country);
@@ -102,7 +174,7 @@ public class GlobalFirePowerDataService {
     public void getSortData() {
         File fload = new File("E:\\deveData\\global\\sort");
         for (File file : fload.listFiles()) {
-            System.out.println("=====================================current File:  " + file.getName());
+//            System.out.println("=====================================current File:  " + file.getName());
             String html = TextIOStreamUtils.readerFile(file.getAbsolutePath());
             analysisSortData(html);
         }
@@ -122,13 +194,13 @@ public class GlobalFirePowerDataService {
     public void getHtmlData() {
         File fload = new File("E:\\deveData\\global\\html");
         for (File htmlFile : fload.listFiles()) {
-            System.out.println("=====================================current File:  " + htmlFile.getName());
+//            System.out.println("=====================================current File:  " + htmlFile.getName());
             String html = TextIOStreamUtils.readerFile(htmlFile.getAbsolutePath());
-            String name = htmlFile.getName().replace(".html", "");
-            name = getEndStr(name);
-            addTransData(name);
+            String countyName = htmlFile.getName().replace(".html", "");
+            countyName = getEndStr(countyName);
+            addTransData(countyName);
             Element mianEl = getHtmlMainEl(html);
-            analysisHtmlData(mianEl);
+            analysisHtmlData(countyName, mianEl);
         }
 
 //        File[] files = new File("E:\\deveData\\global\\sort").listFiles();
@@ -141,7 +213,7 @@ public class GlobalFirePowerDataService {
 //            if (!fileNames.contains(fileName)) {
 //                String html = HttpWormUtils.getHtml( "https://www.globalfirepower.com/"+ str);
 //                TextIOStreamUtils.writeByFileWrite("E:\\deveData\\global\\sort\\" + fileName, html);
-//                System.out.println(str);
+////                System.out.println(str);
 //            }
 //        }
 
@@ -176,7 +248,7 @@ public class GlobalFirePowerDataService {
         sortList.add(new DataSortEntity(title, desc, s1[0], country, s1[1], unit));
     }
 
-    private void analysisHtmlData(Element doc) {
+    private void analysisHtmlData(String countyName, Element doc) {
         Elements children = doc.children();
         String tag = "";
         for (int i = 0; i < children.size(); i++) {
@@ -186,14 +258,14 @@ public class GlobalFirePowerDataService {
                 tag = child.text().split("\\[")[0].trim();
                 addTransData(tag);
             } else if (tag != null && !"".equals(tag)) {
-                analysisHtmlType(child, tag);
+                analysisHtmlType(countyName, child, tag);
                 tag = "";
             }
 
         }
     }
 
-    private void analysisHtmlType(Element el, String type) {
+    private void analysisHtmlType(String countryName, Element el, String type) {
         switch (type) {
             case "OVERVIEW":
                 Elements alist = el.select("a[class=picTrans]");
@@ -206,7 +278,7 @@ public class GlobalFirePowerDataService {
                         textShadow = getEndStr(textShadow);
                         addTransData(textShadow);
                         String overviewRankHolder = overviewRankHolderEl.text().replace("Rnk", "").trim();
-                        addNum(textShadow, overviewRankHolder);
+                        addNum(countryName, type, textShadow, overviewRankHolder);
                     }
                 }
                 break;
@@ -222,11 +294,11 @@ public class GlobalFirePowerDataService {
                 for (Element ele : eles) {
                     String text = ele.select("span[class$=textBold textShadow]").text();
                     String num = ele.select("span[class$=textWhite textShadow]").text();
-                    System.out.println(String.format("%s   ------   %s", text, num));
+//                    System.out.println(String.format("%s   ------   %s", text, num));
                     text = getEndStr(text);
                     addTransData(text);
                     //数字型数据处理
-                    addNum(text, num);
+                    addNum(countryName, type, text, num);
                 }
                 break;
             default:
@@ -234,13 +306,13 @@ public class GlobalFirePowerDataService {
         }
     }
 
-    private void addNum(String text, String num) {
+    private void addNum(String country, String type, String text, String num) {
         num = num.replace(",", "");
         Pattern pattern = Pattern.compile("\\d+");
         Matcher matcher = pattern.matcher(num);
         if (matcher.find()) {
             String unit = num.substring(matcher.end()).trim();
-            htmlList.add(new DataHtmlEntity(text, matcher.group(), unit));
+            htmlList.add(new DataHtmlEntity(country, type, text, matcher.group(), unit));
         }
     }
 
@@ -294,13 +366,13 @@ public class GlobalFirePowerDataService {
         for (int i = 0; i < dataList.size(); i++) {
             Element yearEle = dataList.get(i);
             Elements yearSpanEle = yearEle.select("span[class=textLarger textBold]");
-            System.out.println(yearSpanEle.text());
+//            System.out.println(yearSpanEle.text());
             Elements countrs = yearEle.select("div[class=countryHolder");
             for (int j = 0; j < countrs.size(); j++) {
                 Element country = countrs.get(j);
                 Elements rnkNum = country.select("div[class=rnkNum]");
                 Elements countryName = country.select("div[class=countryName]");
-                System.out.println("   " + rnkNum.text() + " : " + countryName.text());
+//                System.out.println("   " + rnkNum.text() + " : " + countryName.text());
             }
 
         }

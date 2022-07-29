@@ -26,6 +26,13 @@ public class UtilHandle {
         nodeData.put(Constants.IDC_ATTRIBUTE, attribute);
         return nodeData;
     }
+    public static JSONObject setNodeDataAndType(JSONObject attribute, JSONObject data,int type) {
+        JSONObject nodeData = new JSONObject();
+        nodeData.put(Constants.IDC_DATA, data);
+        nodeData.put(Constants.IDC_ATTRIBUTE, attribute);
+        nodeData.put(Constants.IDC_TYPE, type);
+        return nodeData;
+    }
 
     public static JSONObject setNodeInfoOnly(JSONObject data) {
         JSONObject nodeData = data;
@@ -49,7 +56,11 @@ public class UtilHandle {
         returnData.put("IDCData", nodeData);
         return returnData;
     }
-
+    public static JSONObject createDataByYear(String year, String data) {
+        JSONObject nodeData = new JSONObject();
+        nodeData.put(year, data);
+        return nodeData;
+    }
     public static void compareIDCNode(List<IDCNodeInfoVo> oldNodes, List<IDCNodeDataVo> oldDatas, IntegratedDataVo newVo) {
         if (oldNodes == null || oldNodes.isEmpty()) {
             return;
