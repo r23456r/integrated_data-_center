@@ -41,13 +41,13 @@ public class GlobalFirePowerDataService {
         getSortData();
         getRankOdlData();
         transData();
+
+        //翻译
         htmlList.forEach(dataHtmlEntity -> {dataHtmlEntity.setName(transResultMap.get(dataHtmlEntity.getName()).replace("：", ""));});
         sortList.forEach(dataSortEntity -> {dataSortEntity.setCountry(transResultMap.get(dataSortEntity.getCountry()).replace("：", ""));});
-        rankOldList.forEach(addRankOldEntity -> {
-            addRankOldEntity.setCountry(transResultMap.get(addRankOldEntity.getCountry()).replace("：", ""));
-        });
+        rankOldList.forEach(addRankOldEntity -> {addRankOldEntity.setCountry(transResultMap.get(addRankOldEntity.getCountry()).replace("：", ""));});
 
-//        //中英文翻译
+        //导出
         FileUtil.writeBytes(JSONObject.toJSONString(transResultMap).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\trans.json"));
         FileUtil.writeBytes(JSONObject.toJSONString( writeJson2File(htmlList)).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\html.json"));
         FileUtil.writeBytes(JSONObject.toJSONString( writeJson2File(sortList)).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\sort.json"));
