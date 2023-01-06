@@ -45,8 +45,8 @@ public class TVService {
                         if (i1 == resultData.size() - 1) {
                             String endTime = String.valueOf(jsonObject2.get("pg_hour"));
                             String endTimeBJ = date1.toString() + " " + endTime;
-                            info.setEndTimeBJ(DateUtils.NEXTMIDNIGHT(endTimeBJ));
-                            info.setEndTimePST(DateUtils.BJ2PST(DateUtils.NEXTMIDNIGHT(endTimeBJ)));
+                            info.setEndTimeBJ(DateUtils.nextMidNight(endTimeBJ));
+                            info.setEndTimePST(DateUtils.BJ2PST(DateUtils.nextMidNight(endTimeBJ)));
                         }
                         String startTime = String.valueOf(jsonObject2.get("pg_hour"));
                         String programName = String.valueOf(jsonObject2.get("pg_name"));
