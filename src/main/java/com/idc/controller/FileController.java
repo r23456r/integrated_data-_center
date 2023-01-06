@@ -24,8 +24,14 @@ public class FileController {
 
     @ResponseBody
     @GetMapping("/getData/id")
-    public String getData( @PathVariable String id) {
+    public String getData(@PathVariable String id) {
         return null;
     }
 
+    @ResponseBody
+    @GetMapping("/getAllCompanys")
+    public String getAllCompanys() {
+
+        return null;
+    }
 }

@@ -89,6 +89,45 @@ public abstract class HttpWormUtils {
 
     }
 
+    public static String getHtmlForCompany(String url) {
+        // 1.从连接池中获取httpClient对象
+//        CloseableHttpClient httpClient = HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).setConnectionManager(cm).build();
+
+        CloseableHttpClient httpClient = HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).build();
+        // 2.创建HttpGet对象
+        HttpGet httpGet = new HttpGet(url);
+        // 3.设置请求配置对象跟请求头
+        httpGet.setConfig(config);
+        httpGet.setHeader("user-agent", userAgentList.get(new Random().nextInt(userAgentList.size())));
+        httpGet.setHeader("Cookie", "COLLCK=1804297659; COLLCK=1804297659; JSESSIONID=F4CEEE40AF46670106BC737A833ECF51; insert_cookie=97222558");
+        httpGet.setHeader("Host", "femhzs.mofcom.gov.cn");
+        httpGet.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+
+        // 4.发起请求
+        CloseableHttpResponse response = null;
+        try {
+            response = httpClient.execute(httpGet);    // 4.获取相应数据
+            if (response.getStatusLine().getStatusCode() == 200 && response.getEntity() != null) { // 200表示响应成功
+                String html = EntityUtils.toString(response.getEntity(), "UTF-8");
+                return html;
+            } else {
+                System.out.println("error2");
+            }
+
+        } catch (IOException e) {
+            System.out.println("error2");
+            e.printStackTrace();
+        } finally {
+            try {
+                response.close();
+                //httpClient.close(); // 注意这里的httpclient是从连接池获取的 不需要关闭
+            } catch (IOException e) {
+                System.out.println("error2");
+                e.printStackTrace();
+            }
+        }
+        return "";
+    }
     public static String getHtml(String url) {
         // 1.从连接池中获取httpClient对象
 //        CloseableHttpClient httpClient = HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).setConnectionManager(cm).build();
@@ -125,7 +164,6 @@ public abstract class HttpWormUtils {
         }
         return "";
     }
-
     public static String getHtmlGet(String url, Map<String, String> paramData) {
         StringBuffer sb = new StringBuffer();
         boolean first = true;
