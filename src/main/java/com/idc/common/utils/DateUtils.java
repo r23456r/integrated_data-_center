@@ -45,4 +45,9 @@ public class DateUtils {
         LocalDateTime today_start = LocalDateTime.of(LocalDate.parse(dateStr, dateTimeFormatter).plusDays(1), LocalTime.MIN);
         return dateTimeFormatter.format(today_start);
     }
+    public static String plusOneDay(String dateStr) {
+        //增加一天
+        LocalDateTime localDateTime = LocalDateTime.parse(dateStr, dateTimeFormatter).plusDays(1);
+        return dateTimeFormatter.format(localDateTime);
+    }
 }
