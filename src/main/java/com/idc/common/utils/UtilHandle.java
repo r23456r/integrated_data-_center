@@ -26,6 +26,12 @@ public class UtilHandle {
         nodeData.put(Constants.IDC_ATTRIBUTE, attribute);
         return nodeData;
     }
+    public static JSONObject setNodeDataOrdered(JSONObject attribute, Map<String,String> data) {
+        JSONObject nodeData = new JSONObject();
+        nodeData.put(Constants.IDC_DATA, data);
+        nodeData.put(Constants.IDC_ATTRIBUTE, attribute);
+        return nodeData;
+    }
     public static JSONObject setNodeDataAndType(JSONObject attribute, JSONObject data,int type) {
         JSONObject nodeData = new JSONObject();
         nodeData.put(Constants.IDC_DATA, data);
