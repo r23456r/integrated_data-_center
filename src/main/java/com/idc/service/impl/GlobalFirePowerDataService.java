@@ -10,7 +10,6 @@ import com.idc.common.utils.UtilHandle;
 import com.idc.dao.entity.DataHtmlEntity;
 import com.idc.dao.entity.DataRankOldEntity;
 import com.idc.dao.entity.DataSortEntity;
-import com.idc.dao.entity.WtoBean;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -19,6 +18,7 @@ import org.jsoup.select.Elements;
 import org.junit.Test;
 
 import java.io.File;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -27,36 +27,61 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public class GlobalFirePowerDataService {
+
     private Set<String> transSet;
     private Map<String, String> transResultMap = new HashMap<>();
     private List<DataHtmlEntity> htmlList = new ArrayList<>();
     private List<DataSortEntity> sortList = new ArrayList<>();
     private List<DataRankOldEntity> rankOldList = new ArrayList<>();
     Pattern upperCasePattern = Pattern.compile("^[A-Z]+$");
+    private String countryUrl = "https://www.globalfirepower.com/country-military-strength-detail.php?country_id=";
+    private String sortUrl = "https://www.globalfirepower.com/active-military-manpower.php";
+    private String srcDir = "C:\\Users\\PandaIP\\Desktop\\global";
+    private String dstDir = "C:\\Users\\PandaIP\\Desktop\\globalNew";
+    @Test
+    public void download() {
+        File dir = new File(srcDir + "\\html");
+        for (File file : dir.listFiles()) {
+            String fileName = file.getName();
+            if (!fileName.contains(".html")) {
+                continue;
+            }
+            String htmlStr = HttpWormUtils.getHtml(countryUrl + fileName);
+            //写出
+            File tmpFile = new File(dstDir + fileName);
+            FileUtil.writeString(htmlStr, tmpFile, Charset.defaultCharset());
+        }
+    }
 
     @Test
     public void test() {
 
-        getHtmlData();
-        getSortData();
+//        getHtmlData();
+//        getSortData();
         getRankOdlData();
         transData();
 
         //翻译
-        htmlList.forEach(dataHtmlEntity -> {dataHtmlEntity.setName(transResultMap.get(dataHtmlEntity.getName()).replace("：", ""));});
-        sortList.forEach(dataSortEntity -> {dataSortEntity.setCountry(transResultMap.get(dataSortEntity.getCountry()).replace("：", ""));});
-        rankOldList.forEach(addRankOldEntity -> {addRankOldEntity.setCountry(transResultMap.get(addRankOldEntity.getCountry()).replace("：", ""));});
+        htmlList.forEach(dataHtmlEntity -> {
+            dataHtmlEntity.setName(transResultMap.get(dataHtmlEntity.getName()).replace("：", ""));
+        });
+        sortList.forEach(dataSortEntity -> {
+            dataSortEntity.setCountry(transResultMap.get(dataSortEntity.getCountry()).replace("：", ""));
+        });
+        rankOldList.forEach(addRankOldEntity -> {
+            addRankOldEntity.setCountry(transResultMap.get(addRankOldEntity.getCountry()).replace("：", ""));
+        });
 
         //导出
         FileUtil.writeBytes(JSONObject.toJSONString(transResultMap).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\trans.json"));
-        FileUtil.writeBytes(JSONObject.toJSONString( writeJson2File(htmlList)).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\html.json"));
-        FileUtil.writeBytes(JSONObject.toJSONString( writeJson2File(sortList)).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\sort.json"));
-        FileUtil.writeBytes(JSONObject.toJSONString( writeJson2File(rankOldList)).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\oldRank.json"));
+        FileUtil.writeBytes(JSONObject.toJSONString(writeJson2File(htmlList)).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\html.json"));
+        FileUtil.writeBytes(JSONObject.toJSONString(writeJson2File(sortList)).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\sort.json"));
+        FileUtil.writeBytes(JSONObject.toJSONString(writeJson2File(rankOldList)).getBytes(StandardCharsets.UTF_8), new File("C:\\Users\\cetc15\\Desktop\\oldRank.json"));
 
     }
 
     private void getRankOdlData() {
-        File fload = new File("E:\\deveData\\global\\rankOdl.html");
+        File fload = new File("C:\\Users\\PandaIP\\Desktop\\global\\rankOdl.html");
         String html = TextIOStreamUtils.readerFile(fload.getAbsolutePath());
         analysisRankOdlData(html);
     }
