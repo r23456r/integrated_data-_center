@@ -16,7 +16,7 @@
 
 
     <insert id="insertDataSourceInfo"  parameterType="com.idc.dao.entity.DataSourceInfo">
-        INSERT data_source_info (dataSource,dataName,nodeInfoTblName,nodeDataTblName,iconPath,datacomment,createDate,updateDate)
+        INSERT data_source_info (dataSource,dataName,nodeInfoTblName,nodeDataTblName,iconPath,datacomment,selectDataByDataSourcecreateDate,updateDate)
             values (
             #{dataInfo.dataSource},
             #{dataInfo.dataName},

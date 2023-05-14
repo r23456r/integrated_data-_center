@@ -2,7 +2,6 @@ package com.idc.service.impl;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.idc.common.constants.IMFCountryTransEnum;
 import com.idc.common.constants.URLConstants;
 import com.idc.common.utils.HttpWormUtils;
 import com.idc.common.utils.TextIOStreamUtils;
@@ -32,7 +31,7 @@ public class GlobalFirePowerDataServiceImpl implements DataService {
     }
 
     @Test
-    public void test() {
+    public void test(){
         JSONObject jsonObject = getGlobalFirePowerData();
         TextIOStreamUtils.writeByFileWrite("D://datacenter//GlobalFirePowerData.json", jsonObject.toJSONString());
     }
@@ -44,21 +43,20 @@ public class GlobalFirePowerDataServiceImpl implements DataService {
 
         Elements dataList = doc.select("a[title~=^Military strength values of]");
         for (Element element : dataList) {
+            JSONObject jsonObject = new JSONObject();
             String dataUrl = URLConstants.GLOBAL_FIRE_POWER_WEB_URL + element.attr("href").trim();
             String rankNumContainer = element.select("[class=rankNumContainer]").text();
             String countryName = element.select("[class=countryName]").text();
-            String countryNameCn = countryName.substring(0, countryName.length() - 3);
-            IMFCountryTransEnum.getCn(countryName);
             String shortFormName = element.select("[class=shortFormName]").text();
             String pwrIndxScore = element.select("span[class=textLarge] > span[class=textDkGray]").text();
             JSONObject attribute = new JSONObject();
             attribute.put("dataUrl", dataUrl);
-            attribute.put("countryName", countryNameCn);
+            attribute.put("countryName", countryName);
             attribute.put("shortFormName", shortFormName);
             JSONObject data = getCountryDetilInfo(dataUrl);
             data.put("rankNumContainer", UtilHandle.createDataByYYYYMM(new Date(), rankNumContainer));
             data.put("pwrIndxScore", UtilHandle.createDataByYYYYMM(new Date(), pwrIndxScore.replace("PwrIndx Score: ", "").trim()));
-            globalFirePowerData.put(countryNameCn, UtilHandle.setNodeInfo(attribute, data));
+            globalFirePowerData.put(countryName, UtilHandle.setNodeInfo(attribute, data));
         }
         return globalFirePowerData;
     }
@@ -96,7 +94,7 @@ public class GlobalFirePowerDataServiceImpl implements DataService {
                 String itemName = otherItem.select("span[class=\"textLarge textYellow textBold textShadow\"]").text();
                 JSONObject attribute = new JSONObject();
                 attribute.put("itemName", itemName);
-                JSONObject data = UtilHandle.createDataByYYYYMM(new Date(), otherItem.select("span").last().text());
+                JSONObject data = UtilHandle.createDataByYYYYMM(new Date(),otherItem.select("span").last().text());
                 itemInfo.put(itemName, UtilHandle.setNodeInfo(attribute, data));
             }
         }

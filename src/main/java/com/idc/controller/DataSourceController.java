@@ -3,8 +3,8 @@ package com.idc.controller;
 import com.idc.common.utils.TextIOStreamUtils;
 import com.idc.service.DataIntegrateService;
 import com.idc.service.DataSourceService;
-import com.idc.service.impl.WordBackDataServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -17,9 +17,6 @@ public class DataSourceController {
     @Autowired
     private DataSourceService dataSourceService;
 
-    @Autowired
-    private WordBackDataServiceImpl wordBackDataService;
-
 
     @Autowired
     private DataIntegrateService dataIntegrateService;
@@ -31,13 +28,6 @@ public class DataSourceController {
         return "ok";
     }
 
-    @ResponseBody
-    @RequestMapping("/bank")
-    public String bank() {
-        wordBackDataService.getBusinessDataApi();
-        return "ok";
-    }
-	
     @ResponseBody
     @RequestMapping("/deleteTable")
     public String deleteTable() {

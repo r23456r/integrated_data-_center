@@ -1,6 +1,5 @@
 package com.idc.dao.mapper;
 
-import com.idc.dao.entity.BankVo;
 import com.idc.dao.entity.IDCNodeInfoVo;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
@@ -32,10 +31,4 @@ public interface IDCNodeInfoMapper {
      * @return
      */
     List<IDCNodeInfoVo> selectAllIDCNodeInfos(@Param("tableName") String tableName);
-
-
-
-
-    List<BankVo> selectAllBankData();
-
 }

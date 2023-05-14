@@ -1,7 +1,6 @@
 package com.idc.common.utils;
 
 import com.alibaba.fastjson.JSONObject;
-import org.apache.commons.io.FileUtils;
 import org.apache.http.Header;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.config.RequestConfig;
@@ -24,9 +23,7 @@ import org.apache.http.util.EntityUtils;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 
 import javax.net.ssl.SSLContext;
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -92,7 +89,7 @@ public abstract class HttpWormUtils {
 
     }
 
-    public static String getString(String url) {
+    public static String getHtml(String url) {
         // 1.从连接池中获取httpClient对象
 //        CloseableHttpClient httpClient = HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).setConnectionManager(cm).build();
 
@@ -100,12 +97,9 @@ public abstract class HttpWormUtils {
         // 2.创建HttpGet对象
         HttpGet httpGet = new HttpGet(url);
         // 3.设置请求配置对象跟请求头
-
-        httpGet.setHeader("Cookie", "PHPSESSID=6cf2a9km677l7672dnqi0186v2; _hjSessionUser_1543609=eyJpZCI6ImIxY2M1OGI1LTYyY2QtNTYzZS1iNzBkLWExZjVkMzU0ZWM4NyIsImNyZWF0ZWQiOjE2NTA4NDkwMTMyNjQsImV4aXN0aW5nIjpmYWxzZX0=; _hjFirstSeen=1; _hjSession_1543609=eyJpZCI6IjllNWRiZjAyLTkyMzUtNDk0OS05MGM4LTBmODA4MmIwYjI2ZCIsImNyZWF0ZWQiOjE2NTA4NDkwMTMyNzUsImluU2FtcGxlIjp0cnVlfQ==; _hjIncludedInSessionSample=1; _hjAbsoluteSessionInProgress=0; _ga=GA1.2.387825206.1650849064; _gid=GA1.2.1030049007.1650849064; _gat=1");
-        httpGet.setHeader("authorization", "Bearer 098b0352001095eca3ad477674e09cac");
-
-        // httpGet.setHeader("user-agent", userAgentList.get(new Random().nextInt(userAgentList.size())));
-        // httpGet.setHeader("Cookie", "_trs_uv=ksl2iwpq_6_84ch; u=6; JSESSIONID=acqLSUiO5AQP48rKtUoCAChPJi1zxI32IqGFaYSYSJtdpjlBDFrf!1396203093");
+        httpGet.setConfig(config);
+        httpGet.setHeader("user-agent", userAgentList.get(new Random().nextInt(userAgentList.size())));
+        httpGet.setHeader("Cookie", "_trs_uv=ksl2iwpq_6_84ch; u=6; JSESSIONID=acqLSUiO5AQP48rKtUoCAChPJi1zxI32IqGFaYSYSJtdpjlBDFrf!1396203093");
         // 4.发起请求
         CloseableHttpResponse response = null;
         try {
@@ -119,95 +113,6 @@ public abstract class HttpWormUtils {
 
         } catch (IOException e) {
             System.out.println("error2");
-            e.printStackTrace();
-        } finally {
-            try {
-                response.close();
-                //httpClient.close(); // 注意这里的httpclient是从连接池获取的 不需要关闭
-            } catch (IOException e) {
-                System.out.println("error2");
-                e.printStackTrace();
-            }
-        }
-        return "";
-    }
-
-    public static String downloadFromUrl(String url, String dir, String fileName) {
-
-        try {
-            URL httpurl = new URL(url);
-
-            File f = new File(dir + fileName);
-            FileUtils.copyURLToFile(httpurl, f);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "Fault!";
-        }
-        return "Successful!";
-    }
-
-
-    public static String getFileNameFromUrl(String url) {
-        String name = new Long(System.currentTimeMillis()).toString() + ".X";
-        int index = url.lastIndexOf("/");
-        if (index > 0) {
-            name = url.substring(index + 1);
-            if (name.contains("?")) {
-                index = name.lastIndexOf("?");
-                name = name.substring(0, index);
-                return name;
-            } else if (name.trim().length() > 0) {
-                return name;
-            }
-        }
-        return name;
-    }
-
-    public static String getHtml(String url) {
-        return getHtml(url, "UTF-8");
-    }
-
-    public static String getHtml(String url, String charset) {
-        // 1.从连接池中获取httpClient对象
-//        CloseableHttpClient httpClient = HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).setConnectionManager(cm).build();
-
-        CloseableHttpClient httpClient = HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).build();
-        // 2.创建HttpGet对象
-        HttpGet httpGet = new HttpGet(url);
-        // 3.设置请求配置对象跟请求头
-        httpGet.setConfig(config);
-        httpGet.setHeader("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.60 Safari/537.36");
-        httpGet.setHeader("Cookie", "_trs_uv=ksl2iwpq_6_84ch; u=1; JSESSIONID=tmr5oN7JykkbfjkUhH-I3O-QNgbVB8aKb19k0Wo-lJCPGuoKrYHv!2136956367");
-        // 4.发起请求
-        CloseableHttpResponse response = null;
-        try {
-            response = httpClient.execute(httpGet);    // 4.获取相应数据
-            if (response.getStatusLine().getStatusCode() == 200 && response.getEntity() != null) { // 200表示响应成功
-                String html = "";
-                if (charset == null) {
-                    html = EntityUtils.toString(response.getEntity());
-                } else {
-                    html = EntityUtils.toString(response.getEntity(), charset);
-                }
-                return html;
-            } else {
-                Thread.sleep(500);
-                response = httpClient.execute(httpGet);    // 4.获取相应数据
-                if (response.getStatusLine().getStatusCode() == 200 && response.getEntity() != null) { // 200表示响应成功
-                    String html = "";
-                    if (charset == null) {
-                        html = EntityUtils.toString(response.getEntity());
-                    } else {
-                        html = EntityUtils.toString(response.getEntity(), charset);
-                    }
-                    return html;
-                } else {
-                    System.out.println("error2" + " :: " + httpGet);
-                }
-            }
-
-        } catch (IOException | InterruptedException e) {
-            System.out.println("error2" + e);
             e.printStackTrace();
         } finally {
             try {
@@ -240,33 +145,8 @@ public abstract class HttpWormUtils {
             int time = new Random().nextInt(1500) % (1500 - 1000 + 1) + 2000;
             Thread.sleep(time);
         } catch (Exception e) {
-            if (html.contains(",\"sort")) {
-                html = html.replace(",\"sort", "}]}]}}");
-                try {
-                    JSONObject.parseObject(html);
-                    int time = new Random().nextInt(1500) % (1500 - 1000 + 1) + 2000;
-                    Thread.sleep(time);
-                } catch (Exception e2) {
-
-                    System.out.println("error1" + html);
-                    return new JSONObject().toJSONString();
-                }
-            } else if (html.contains("\"nodesort\":\"1")) {
-                html = html + "\"}]}]}}";
-                try {
-                    JSONObject.parseObject(html);
-                    int time = new Random().nextInt(1500) % (1500 - 1000 + 1) + 2000;
-                    Thread.sleep(time);
-                } catch (Exception e2) {
-
-                    System.out.println("error1" + html);
-                    return new JSONObject().toJSONString();
-                }
-            } else {
-                System.out.println("error1" + html);
-                return new JSONObject().toJSONString();
-            }
-            return html;
+            System.out.println("error1");
+            return new JSONObject().toJSONString();
         }
 
 
@@ -292,7 +172,7 @@ public abstract class HttpWormUtils {
 
             UrlEncodedFormEntity entity = new UrlEncodedFormEntity(params, "UTF-8");
             httpPost.setEntity(entity); // 设置请求体/参数
-            httpPost.setHeader("Cookie", "_trs_uv=ksl2iwpq_6_84ch; u=6; JSESSIONID=tmr5oN7JykkbfjkUhH-I3O-QNgbVB8aKb19k0Wo-lJCPGuoKrYHv!2136956367");
+            httpPost.setHeader("Cookie", "_trs_uv=ksl2iwpq_6_84ch; u=6; JSESSIONID=acqLSUiO5AQP48rKtUoCAChPJi1zxI32IqGFaYSYSJtdpjlBDFrf!1396203093");
 
             httpPost.setHeader("user-agent", userAgentList.get(new Random().nextInt(userAgentList.size())));
             response = httpClient.execute(httpPost);    // 4.获取相应数据
@@ -304,12 +184,14 @@ public abstract class HttpWormUtils {
                 Thread.sleep(2000);
                 Header header = response.getFirstHeader("location");
                 String newuri = header.getValue();
+                System.out.println(newuri);
                 httpPost = new HttpPost(url);
                 httpPost.setHeader("user-agent", userAgentList.get(new Random().nextInt(userAgentList.size())));
-                httpPost.setHeader("Cookie", "_trs_uv=ksl2iwpq_6_84ch; u=1; JSESSIONID=yaXxTD05FZGTl8jtW6088-zd4h2I1H0NN6QrwisKKy2j6NBV9V5h!2136956367");
+                httpPost.setHeader("Cookie", "_trs_uv=ksl2iwpq_6_84ch; u=6; JSESSIONID=acqLSUiO5AQP48rKtUoCAChPJi1zxI32IqGFaYSYSJtdpjlBDFrf!1396203093");
                 httpPost.setEntity(entity);
 
                 response = httpClient.execute(httpPost);
+                System.out.println(response.getStatusLine().getStatusCode());
                 if (response.getStatusLine().getStatusCode() == 200 && response.getEntity() != null) { // 200表示响应成功
                     String html = EntityUtils.toString(response.getEntity(), "UTF-8");
                     return html;
