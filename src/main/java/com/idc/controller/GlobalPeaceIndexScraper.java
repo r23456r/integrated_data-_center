@@ -3,6 +3,7 @@ package com.idc.controller;
 import antlr.StringUtils;
 import cn.hutool.core.io.FileUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.idc.common.constants.Constants;
 import com.idc.common.utils.UtilHandle;
 import com.idc.dao.entity.GlobalPeaceVo;
 import org.jsoup.Jsoup;
@@ -35,7 +36,7 @@ public class GlobalPeaceIndexScraper {
         File outFile = new File("C:\\Users\\PandaIP\\Desktop\\vital_2.json");
 
         // Find the table of interest and extract the rows
-        List<Integer> tableIds = Arrays.asList(1,2,3);
+        List<Integer> tableIds = Arrays.asList(1, 2, 3);
         for (Integer tableId : tableIds) {
             Element table = doc.select("table").get(tableId);
 
@@ -69,7 +70,7 @@ public class GlobalPeaceIndexScraper {
                         if (element.text().contains(".")) {
                             String score = element.text();
                             String rank = cols.get(i1 - 1).text();
-                            GlobalPeaceVo peaceVo = new GlobalPeaceVo(country.replace(" ", ""), rank, score, String.valueOf(count1));
+                            GlobalPeaceVo peaceVo = new GlobalPeaceVo(country.replace(" ", ""), rank.replace("=", ""), score, String.valueOf(count1));
                             System.out.println("-----------" + peaceVo.toString());
                             list.add(peaceVo);
                             count1--;
@@ -93,49 +94,35 @@ public class GlobalPeaceIndexScraper {
         JSONObject transJson = JSONObject.parseObject(translateJson);
 
         Map jsonResult = new LinkedHashMap();
-        Map<String, List<GlobalPeaceVo>> collect = wtoBeans.stream().collect(Collectors.groupingBy(GlobalPeaceVo::getDate));
-        Map<String, Object> treeJsonData = new LinkedHashMap();
-        for (String date : collect.keySet()) {
+        Map<String, List<GlobalPeaceVo>> countryMap1 = wtoBeans.stream().collect(Collectors.groupingBy(GlobalPeaceVo::getCountry));
+        Map<String, Object> treeJsonData = new LinkedHashMap<>();
+        for (String country : countryMap1.keySet()) {
+            Map resultB = new HashMap();
+            if (StringUtil.isBlank(country)) {
+                continue;
+            }
+            List<GlobalPeaceVo> globalPeaceVos1 = countryMap1.get(country);
+            Map<String, String> rankMapData = new LinkedHashMap<>();
+            Map<String, String> scoreMapData = new LinkedHashMap<>();
+            for (GlobalPeaceVo peaceVo : globalPeaceVos1) {
+                rankMapData.put(peaceVo.getDate(), peaceVo.getRank());
+                scoreMapData.put(peaceVo.getDate(), peaceVo.getScore());
+            }
+            resultB.put("rank", UtilHandle.setNodeDataOnly(rankMapData));
+            resultB.put("score", UtilHandle.setNodeDataOnly(scoreMapData));
+
+            //2. translate
             Map attrB = new LinkedHashMap<>();
-            attrB.put("date", date);
-            Map dataB = new LinkedHashMap();
-            Map<String, List<GlobalPeaceVo>> countryMap = collect.get(date).stream().collect(Collectors.groupingBy(GlobalPeaceVo::getCountry));
-            List<String> sortedList = countryMap.keySet().stream().sorted().collect(Collectors.toList());
-            for (String country : sortedList) {
-                Map attrC = new LinkedHashMap<>();
-                Map dataC = new LinkedHashMap();
-                if (StringUtil.isBlank(country)) {
-                    continue;
-                }
-                attrC.put("countryEn", country);
-                Object countryCn = transJson.get(country);
-                if (countryCn == null) {
-                    continue;
-                }
-                attrC.put("countryCn", countryCn);
-                List<GlobalPeaceVo> globalPeaceVos = countryMap.get(country);
-                for (GlobalPeaceVo globalPeaceVo : globalPeaceVos) {
-                    dataC.put("rank", globalPeaceVo.getRank());
-                    dataC.put("score", globalPeaceVo.getScore());
-                }
-                if (dataC == null) {
-                    System.out.println("-------??");
-                }
-                dataB.put(countryCn, UtilHandle.setNodeDataMap(attrC, dataC));
+            attrB.put("countryEn", country);
+            Object countryCn = transJson.get(country);
+            if (countryCn == null) {
+                continue;
             }
-            if (dataB == null) {
-                System.out.println("-------??");
-            }
-            Map resultB = UtilHandle.setNodeDataMap(attrB, dataB);
-            treeJsonData.put(date, resultB);
+            attrB.put("countryCn", countryCn);
+            resultB.put(Constants.IDC_ATTRIBUTE, attrB);
+            treeJsonData.put((String) countryCn, resultB);
         }
-        //date重排序
-        Map<String,Object> dateMap = new LinkedHashMap<>();
-        List<String> sortedDateList = treeJsonData.keySet().stream().sorted().collect(Collectors.toList());
-        for (String date : sortedDateList) {
-            dateMap.put(date, treeJsonData.get(date));
-        }
-        jsonResult.put("Global_Peace_Index", dateMap);
+        jsonResult.put("Global_Peace_Index", treeJsonData);
 
         writeFile("C:\\Users\\PandaIP\\Desktop\\vital_2.json", JSONObject.toJSONString(jsonResult));
     }
