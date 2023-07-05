@@ -1,5 +1,6 @@
 package com.idc.common.utils;
 
+import cn.hutool.http.HttpRequest;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.http.Header;
 import org.apache.http.NameValuePair;
@@ -24,6 +25,8 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -214,5 +217,10 @@ public abstract class HttpWormUtils {
             }
         }
         return "";
+    }
+    public static String vpnGet(String url) {
+        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 7890));
+        HttpRequest httpRequest = HttpRequest.get(url);
+        return httpRequest.setProxy(proxy).execute().body();
     }
 }
